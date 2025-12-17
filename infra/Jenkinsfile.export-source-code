@@ -1,0 +1,30 @@
+pipeline {
+  agent any
+
+  environment {
+    IMAGE_NAME   = 'jenkins-cpp-buildenv'
+    ARTIFACT    = 'calculator.tar.gz'
+  }
+
+  stages {
+    stage('Package calculator') {
+      steps {
+        script {
+          docker.image(IMAGE_NAME).inside {
+            sh '''
+              rm -f ${ARTIFACT}
+              tar -czf ${ARTIFACT} calculator \
+                --exclude=calculator/obj \
+                --exclude=calculator/bin
+            '''
+          }
+        }
+      }
+      post {
+        success {
+          archiveArtifacts artifacts: "${ARTIFACT}", fingerprint: true
+        }
+      }
+    }
+  }
+}
