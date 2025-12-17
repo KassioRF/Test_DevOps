@@ -1,5 +1,7 @@
 pipeline {
-  agent 'default-agent'
+  agent {
+    label 'default-agent'
+  }
 
   environment {
     IMAGE_NAME = 'jenkins-cpp-buildenv'
