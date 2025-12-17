@@ -1,0 +1,82 @@
+pipeline {
+  agent any
+
+  environment {
+    IMAGE_NAME = 'jenkins-cpp-buildenv'
+  }
+
+  stages {
+    stage('Build Docker image') {
+      steps {
+        sh '''
+          if [ -z "$(docker images -q ${IMAGE_NAME} 2>/dev/null)" ]; then
+            docker build --network=host -f calculator/Dockerfile.ci -t ${IMAGE_NAME} .
+          else
+            echo "Using cached image ${IMAGE_NAME}"
+          fi
+        '''
+      }
+    }
+
+    stage('Code checks') {
+      when {
+        anyOf {
+          branch 'main'
+          changeRequest()
+        }
+      }
+      steps {
+        script {
+          docker.image(IMAGE_NAME).inside {
+            dir('calculator') {
+              sh 'make lint'
+              sh 'make format-check'
+            }
+          }
+        }
+      }
+    }
+
+    stage('Tests') {
+      when {
+        anyOf {
+          branch 'main'
+          changeRequest()
+        }
+      }
+      steps {
+        script {
+          docker.image(IMAGE_NAME).inside {
+            dir('calculator') {
+              sh 'make unittest'
+            }
+          }
+        }
+      }
+    }
+
+    stage('Build artifact') {
+      when {
+        anyOf {
+          branch 'main'
+          triggeredBy 'UserIdCause'
+        }
+      }
+      steps {
+        script {
+          docker.image(IMAGE_NAME).inside {
+            dir('calculator') {
+              sh 'make clean && make'
+              sh 'tar -czf obj.tar.gz obj'
+            }
+          }
+        }
+      }
+      post {
+        success {
+          archiveArtifacts artifacts: 'calculator/obj.tar.gz', fingerprint: true
+        }
+      }
+    }
+  }
+}
