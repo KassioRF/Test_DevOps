@@ -22,32 +22,27 @@ pipeline {
       }
     }
 
-    stage('Code checks') {
-      when {
-        changeRequest(target: 'main')
-      }
-      steps {
-        script {
-          docker.image(IMAGE_NAME).inside {
-            dir('calculator') {
-              sh 'make lint'
-              sh 'make format-check'
-            }
+
+    stages {
+      stage('Code checks') {
+        when {
+          changeRequest(target: 'main')
+        }
+        steps {
+          dir('calculator') {
+            sh 'make lint'
+            sh 'make format-check'
           }
         }
       }
-    }
 
-    stage('Tests') {
-      when {
-        changeRequest(target: 'main')
-      }
-      steps {
-        script {
-          docker.image(IMAGE_NAME).inside {
-            dir('calculator') {
-              sh 'make unittest'
-            }
+      stage('Tests') {
+        when {
+          changeRequest(target: 'main')
+        }
+        steps {
+          dir('calculator') {
+            sh 'make unittest'
           }
         }
       }
