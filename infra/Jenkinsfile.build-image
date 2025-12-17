@@ -13,7 +13,7 @@ pipeline {
       steps {
         sh '''
           echo "[INFO] Building base image: ${IMAGE_NAME}"
-          docker build --network=host -f calculator/Dockerfile.ci -t ${IMAGE_NAME} .
+          docker build --network=host -f infra/Dockerfile.base-image -t ${IMAGE_NAME} .
         '''
       }
     }
