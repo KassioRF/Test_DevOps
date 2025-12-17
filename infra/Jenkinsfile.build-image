@@ -1,0 +1,28 @@
+pipeline {
+  agent 'default-agent'
+
+  environment {
+    IMAGE_NAME = 'jenkins-cpp-buildenv'
+  }
+
+
+  stages {
+    stage('Build CI Image') {
+      steps {
+        sh '''
+          echo "[INFO] Building base image: ${IMAGE_NAME}"
+          docker build --network=host -f calculator/Dockerfile.ci -t ${IMAGE_NAME} .
+        '''
+      }
+    }
+  }
+
+  post {
+    success {
+      echo "[SUCCESS] Base image '${IMAGE_NAME}' built successfully!"
+    }
+    failure {
+      echo "[ERROR] Failed to build base image."
+    }
+  }
+}
