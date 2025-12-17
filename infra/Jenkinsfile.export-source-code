@@ -2,8 +2,8 @@ pipeline {
   agent any
 
   environment {
-    IMAGE_NAME   = 'jenkins-cpp-buildenv'
-    ARTIFACT    = 'calculator.tar.gz'
+    IMAGE_NAME = 'jenkins-cpp-buildenv'
+    ARTIFACT  = 'calculator.tar.gz'
   }
 
   stages {
@@ -13,9 +13,7 @@ pipeline {
           docker.image(IMAGE_NAME).inside {
             sh '''
               rm -f ${ARTIFACT}
-              tar -czf ${ARTIFACT} calculator \
-                --exclude=calculator/obj \
-                --exclude=calculator/bin
+              tar --exclude=calculator/obj --exclude=calculator/bin -czf ${ARTIFACT} calculator
             '''
           }
         }
