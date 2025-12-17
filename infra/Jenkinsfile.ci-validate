@@ -1,69 +1,34 @@
 pipeline {
   agent {
-    label 'integration-agent'
-  }
-
-  environment {
-    IMAGE_NAME = 'jenkins-cpp-buildenv'
-  }
-  // Como o build image ficou declarado para ser disparado de forma manual
-  // um pequeno check é feito, para garantir a existência da imagem se por 
-  // algum motivo ela não estiver mais presente para os agentes.
-  stages {
-    stage('Build Docker image') {
-      steps {
-        sh '''
-          if [ -z "$(docker images -q ${IMAGE_NAME} 2>/dev/null)" ]; then
-            docker build --network=host -f calculator/Dockerfile.ci -t ${IMAGE_NAME} .
-          else
-            echo "Using cached image ${IMAGE_NAME}"
-          fi
-        '''
-      }
+    docker {
+      image 'jenkins-cpp-buildenv'
+      label 'integration-agent'
+      args '-u 1000:1000'
     }
+  }
 
+  stages {
     stage('Code checks') {
       when {
-        anyOf {
-          branch 'main'
-          changeRequest()
-        }
+        changeRequest(target: 'main')
       }
       steps {
-        script {
-          docker.image(IMAGE_NAME).inside {
-            dir('calculator') {
-              sh 'make lint'
-              sh 'make format-check'
-            }
-          }
+        dir('calculator') {
+          sh 'make lint'
+          sh 'make format-check'
         }
       }
     }
 
     stage('Tests') {
       when {
-        anyOf {
-          branch 'main'
-          changeRequest()
-        }
+        changeRequest(target: 'main')
       }
       steps {
-        script {
-          docker.image(IMAGE_NAME).inside {
-            dir('calculator') {
-              sh 'make unittest'
-            }
-          }
+        dir('calculator') {
+          sh 'make unittest'
         }
       }
     }
-    // post {
-    //   always {
-    //     echo "CHANGE_ID=${env.CHANGE_ID}"
-    //     echo "CHANGE_BRANCH=${env.CHANGE_BRANCH}"
-    //     echo "CHANGE_TARGET=${env.CHANGE_TARGET}"
-    //   }
-    // }
-  }    
+  }
 }
